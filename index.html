@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4efe4">
+  <meta name="description" content="OneFile Kit is a workbench of three self-contained HTML files. Open a starter skeleton, a habit tracker, or a focus timer straight from your browser.">
+  <title>OneFile Kit · The workbench</title>
+  <style>
+    :root {
+      --paper: #f4efe4; --sheet: #fcfaf4; --ink: #2e2a24; --line: #cfc4ab;
+      --kit: #44546e; --habits: #3e7d4e; --garden: #b4552d; --muted: #645f54;
+      --mono: ui-monospace, "SF Mono", monospace;
+      font-family: system-ui, sans-serif; color: var(--ink); background: var(--paper);
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .container { width: min(1116px, calc(100% - 88px)); margin: 0 auto; }
+    svg { display: block; }
+    .symbols { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
+    .mast { border-bottom: 1px solid var(--line); }
+    .mast-inner, .brand, .edition, .file-count, .card-file, .foot-inner { display: flex; align-items: center; }
+    .mast-inner { justify-content: space-between; gap: 14px; min-height: 67px; }
+    .brand { gap: 10px; font-size: 20px; font-weight: 745; letter-spacing: -.06em; }
+    .brand-mark { width: 32px; height: 32px; flex: none; }
+    .edition, .kicker, .file-count, .card-file, .foot-inner { font: 11px/1.5 var(--mono); }
+    .edition { gap: 11px; color: var(--muted); }
+    .edition .divider { width: 1px; height: 13px; background: var(--line); }
+    .hero { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 30px; padding: 40px 0 35px; }
+    .kicker { display: flex; gap: 10px; align-items: center; margin: 0 0 17px; text-transform: uppercase; font-weight: 650; letter-spacing: .13em; color: var(--kit); }
+    .kicker:before { content: ""; width: 25px; height: 2px; background: currentColor; }
+    .kicker span { font-weight: 500; letter-spacing: .1em; }
+    h1 { margin: 0; font-size: clamp(56px, 5.65vw, 84px); line-height: .99; letter-spacing: -.077em; font-weight: 740; }
+    h1 span { color: var(--kit); }
+    .intro { max-width: 425px; margin: 18px 0 0; font-size: 16px; line-height: 1.55; color: #575249; }
+    .desk-art { width: 100%; max-width: 478px; justify-self: center; }
+    .collection { border-top: 1px solid var(--line); padding: 25px 0 36px; }
+    .collection-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .collection h2 { font-size: 23px; font-weight: 700; letter-spacing: -.045em; margin: 0; }
+    .file-count { gap: 7px; color: var(--muted); }
+    .file-count .icon { width: 15px; height: 15px; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+    .card {
+      --accent: var(--kit); --wash: #e2e6e6; --grid: #adb7bd;
+      display: flex; flex-direction: column; min-width: 0; border: 1px solid #beb59f; border-radius: 10px;
+      box-shadow: 0 3px 0 -1px #ded7c8; overflow: hidden; background: var(--sheet);
+      transition: transform .17s ease, box-shadow .17s ease, border-color .17s ease;
+    }
+    .card.habits { --accent: var(--habits); --wash: #e3eadd; --grid: #acb8a2; }
+    .card.garden { --accent: var(--garden); --wash: #f0dfcf; --grid: #c6ab94; }
+    .card:focus-within { border-color: var(--accent); }
+    .art-panel { background: var(--wash); position: relative; height: clamp(132px, 11.8vw, 167px); overflow: hidden; border-bottom: 1px solid #c7c0af; color: var(--accent); }
+    .art-panel:before {
+      content: ""; position: absolute; inset: 0; opacity: .46;
+      background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px), linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-position: center; background-size: 18px 18px;
+    }
+    .art-panel svg { position: relative; width: 100%; height: 100%; }
+    .card-info { padding: 17px 20px 17px; display: flex; flex-direction: column; flex: 1; }
+    .card-file { gap: 5px; font-size: 10.5px; color: var(--muted); }
+    .card-file .icon { width: 13px; height: 13px; color: var(--accent); }
+    .card-file .dot { padding: 0 2px; }
+    .card h3 { font-weight: 720; font-size: 25px; line-height: 1.2; letter-spacing: -.055em; margin: 9px 0 6px; }
+    .description { font-size: 14px; line-height: 1.5; color: #59554c; margin: 0 0 18px; }
+    .open {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; min-height: 40px;
+      border-top: 1px solid #dcd5c5; padding: 12px 0 0; text-decoration: none; color: var(--accent);
+      font-weight: 690; font-size: 13px; letter-spacing: -.012em;
+    }
+    .open .icon { width: 17px; height: 17px; transition: transform .15s ease; }
+    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    @media (hover: hover) {
+      .card:has(.open:hover) { transform: translateY(-3px); box-shadow: 0 6px 0 -1px #ded7c8; border-color: var(--accent); }
+      .open:hover .icon { transform: translateX(3px); }
+    }
+    .open:active .icon { transform: translateX(4px); }
+    footer { border-top: 1px solid var(--line); }
+    .foot-inner { min-height: 56px; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 10px; }
+    .foot-inner .foot-file { display: inline-flex; align-items: center; gap: 6px; }
+    .foot-file .icon { width: 13px; height: 13px; }
+    @media (max-width: 870px) {
+      .container { width: calc(100% - 48px); }
+      .cards { gap: 14px; }
+      .card-info { padding: 15px; }
+      .hero { gap: 8px; }
+    }
+    @media (max-width: 680px) {
+      .container { width: calc(100% - 36px); }
+      .mast-inner { min-height: 58px; }
+      .edition .divider, .edition .category { display: none; }
+      .hero { grid-template-columns: 1fr; padding: 30px 0 17px; gap: 5px; }
+      h1 { font-size: clamp(55px, 11vw, 72px); }
+      .intro { font-size: 15px; margin-top: 14px; }
+      .desk-art { max-width: 350px; }
+      .collection { padding-top: 18px; }
+      .cards { grid-template-columns: 1fr; gap: 20px; }
+      .art-panel { height: 152px; }
+      .card-info { padding: 17px 20px; }
+      .foot-inner { flex-wrap: wrap; padding-block: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *:before { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <symbol id="file" viewBox="0 0 24 24"><path d="M5 2.8h9l5 5V21H5z M14 3v5h5"/></symbol>
+      <symbol id="folder" viewBox="0 0 24 24"><path d="M2.8 6h6l2 2H21v11H3z M3 8V4h6l2 2h8"/></symbol>
+      <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+      <g id="registration" fill="none" stroke="currentColor" stroke-width="1"><path d="M-4 0h8M0-4v8"/></g>
+    </defs>
+  </svg>
+  <header class="mast">
+    <div class="mast-inner container">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true"><rect x=".5" y=".5" width="33" height="33" rx="7" fill="#44546e"/><g fill="none" stroke="#f4efe4" stroke-width="1.45" stroke-linejoin="round"><path d="M9 10H7v17h14v-2"/><path d="M11 6h9l6 6v11H11z M20 6v6h6"/><path d="M14 16h8m-8 3h5"/></g></svg>
+        <span>OneFile Kit</span>
+      </div>
+      <div class="edition"><span>Kiroween 2026</span><span class="divider" aria-hidden="true"></span><span class="category">Skeleton Crew</span></div>
+    </div>
+  </header>
+  <main class="container">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <p class="kicker">The workbench <span lang="ja">/ 作業台</span></p>
+        <h1 id="title">Small tools.<br><span>Single files.</span></h1>
+        <p class="intro">One HTML skeleton and two everyday apps built from it. Open any file in your browser and get to work.</p>
+      </div>
+      <svg class="desk-art" viewBox="0 0 460 250" fill="none" aria-hidden="true">
+        <defs>
+          <pattern id="desk-dots" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".85" fill="#b7ae9b"/></pattern>
+          <pattern id="hatching" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M-1 1 1-1M0 5 5 0M4 6 6 4" stroke="#66778c" stroke-width=".75"/></pattern>
+          <pattern id="shadow-hatch" width="5" height="5" patternUnits="userSpaceOnUse"><path d="m0 5 5-5" stroke="#b2a791" stroke-width=".8"/></pattern>
+        </defs>
+        <rect x="24" y="21" width="414" height="212" fill="url(#desk-dots)" opacity=".58"/>
+        <g color="#a69e8a"><use href="#registration" x="24" y="21"/><use href="#registration" x="438" y="21"/><use href="#registration" x="24" y="233"/><use href="#registration" x="438" y="233"/></g>
+        <path d="m48 200 214 39 143-41-200-39z" fill="url(#shadow-hatch)" opacity=".85"/>
+        <!-- The back cover and three loose sheets, shown in an oblique view. -->
+        <g stroke="#3b4a60" stroke-width="1.85" stroke-linejoin="round" stroke-linecap="round">
+          <path d="m90 98 4-27q.5-4 5-4l59 7 9 12 134 16q4 0 3 5l-19 108-184-28Z" fill="#c0c8cc"/>
+          <path d="m93 99 5-27 58 7 9 12 135 16" stroke="#7f8e9c" stroke-width="1.2"/>
+        </g>
+        <g transform="matrix(.9 .16 -.17 .91 130 33)" stroke="#42536a" stroke-linejoin="round">
+          <path d="M0 0h62l17 17v117H0Z" fill="#edf0ed" stroke-width="2"/>
+          <path d="M62 0v17h17" fill="#cad4da" stroke-width="1.6"/>
+          <path d="M12 18h28m-28 5h20" stroke-width="1.5"/>
+          <rect x="12" y="35" width="48" height="39" rx="1" stroke-width="1.6"/>
+          <path d="M12 44h48m-36 0v30m5-22h24m-24 7h15" stroke-width="1.4"/>
+        </g>
+        <g transform="matrix(.93 .12 -.1 .96 202 19)" stroke="#47674a" stroke-linejoin="round">
+          <path d="M0 0h64l18 18v133H0Z" fill="#e1e9d5" stroke-width="2"/>
+          <path d="M64 0v18h18" fill="#bfcdaf" stroke-width="1.6"/>
+          <path d="M11 13h29" stroke-width="1.7"/>
+          <g stroke-width="1.7"><rect x="12" y="29" width="9" height="9" rx="1"/><path d="m13.5 32.5 2.5 2.5 4-5M28 33h33"/><rect x="12" y="46" width="9" height="9" rx="1"/><path d="m13.5 50 2.5 2.5 4-5M28 50h28"/><rect x="12" y="63" width="9" height="9" rx="1"/><path d="M28 67h32"/></g>
+        </g>
+        <g transform="matrix(.91 .23 -.21 .94 277 48)" stroke="#995236" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M0 0h54l17 17v115H0Z" fill="#eedcc5" stroke-width="2"/>
+          <path d="M54 0v17h17" fill="#d9b99b" stroke-width="1.6"/>
+          <path d="M9 13h23m-23 5h15" stroke-width="1.4"/>
+          <path d="M34 76q0-19 9-35m-7 18q-17-2-18-18 13 1 18 18Zm3-9q0-18 16-21 1 14-16 21Z" fill="#d4a179" stroke-width="1.7"/>
+          <path d="M17 81h34m-28 6h21" stroke-width="1.5"/>
+        </g>
+        <!-- Long folded front flap, with a clipped corner and hatch-shaded gusset. -->
+        <g stroke="#39495f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+          <path d="m89 95 20 87 173 38 15-99-155-23-6-7-42-6q-6-1-5 10Z" fill="#8594a4"/>
+          <path d="m92 94 38 6 8 9 140 22q6 1 7 8l10 67q1 7-5 10l-8 4-180-32-18-86q-2-9 8-8Z" fill="#aebbc5"/>
+          <path d="m85 98 42 7 8 9 140 22q6 1 7 8l11 65-11 11-180-32-18-86Z" fill="#d3dade"/>
+          <path d="m282 220 10-13-10-63 14-22-8 89z" fill="url(#hatching)" stroke-width="1.3"/>
+          <path d="m104 183 173 31m-187-109 39 6" stroke="#82929f" stroke-width="1.2"/>
+          <g transform="matrix(1 .17 .16 .96 111 121)">
+            <rect width="47" height="34" rx="2" fill="#44546e" stroke-width="1.5"/>
+            <path d="m13 11-6 5 6 6m20-11 6 5-6 6m-7-14-6 18" stroke="#f4efe4" stroke-width="1.9"/>
+          </g>
+        </g>
+        <g stroke="#7b817e" stroke-width="1.05" stroke-linejoin="round">
+          <path d="M62 55 79 42h35m211 124h30l13-13h23" stroke-dasharray="3 3"/>
+          <circle cx="61" cy="56" r="2" fill="#f4efe4"/><circle cx="325" cy="166" r="2" fill="#f4efe4"/>
+        </g>
+        <g transform="rotate(7 362 87)" stroke="#938875" stroke-width="1.2" fill="none"><path d="m356 78 10 27c2 5 10 3 8-3l-12-33c-2-5-10-4-8 3l11 30c1 2 4 2 4-1l-9-26"/></g>
+      </svg>
+    </section>
+
+    <section class="collection" aria-labelledby="collection-title">
+      <div class="collection-head"><h2 id="collection-title">File collection</h2><span class="file-count"><svg class="icon" aria-hidden="true"><use href="#folder"/></svg>3 HTML files</span></div>
+      <div class="cards">
+        <article class="card">
+          <div class="art-panel" aria-hidden="true">
+            <svg viewBox="0 0 312 146" fill="none">
+              <g color="#8f9a9f"><use href="#registration" x="24" y="20"/><use href="#registration" x="288" y="126"/></g>
+              <g transform="rotate(-7 153 75)" stroke="#40536a" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M83 31h136v90H83z" fill="#bbc5cc" stroke-width="1.7"/>
+                <path d="M89 26h136v90H89z" fill="#d9dfe1" stroke-width="1.7"/>
+                <rect x="95" y="21" width="136" height="89" rx="3" fill="#f5f4ed" stroke-width="2"/>
+                <path d="M95 34h136" stroke-width="1.6"/><g fill="#66758a" stroke="none"><circle cx="102" cy="27.5" r="1.5"/><circle cx="108" cy="27.5" r="1.5"/><circle cx="114" cy="27.5" r="1.5"/></g>
+                <rect x="103" y="42" width="29" height="58" rx="1" fill="#c7d1d6"/>
+                <path d="M108 49h17m-17 7h12m-12 7h15m-15 7h9" stroke-width="1.3"/>
+                <path d="M141 43h32m-32 6h21" stroke-width="1.5"/>
+                <rect x="141" y="57" width="80" height="42" rx="1" stroke-dasharray="3 3"/>
+                <path d="m171 71-7 6 7 6m18-12 7 6-7 6m-6-15-5 18" stroke-width="2.1"/>
+              </g>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-file"><svg class="icon" aria-hidden="true"><use href="#file"/></svg>skeleton.html <span class="dot" aria-hidden="true">·</span> <span data-bytes="skeleton">21,482 B</span></div>
+            <h3>Skeleton</h3>
+            <p class="description">A starter with tabs, settings, and local storage ready to build on.</p>
+            <a class="open" href="skeleton/skeleton.html">Open skeleton <svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+        </article>
+        <article class="card habits">
+          <div class="art-panel" aria-hidden="true">
+            <svg viewBox="0 0 312 146" fill="none">
+              <g color="#8c9e86"><use href="#registration" x="24" y="20"/><use href="#registration" x="288" y="126"/></g>
+              <g transform="rotate(-8 150 76)" stroke="#456e4c" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M98 29h112v99H98z" fill="#b9c8ad" stroke-width="1.5"/>
+                <rect x="102" y="24" width="112" height="99" rx="2" fill="#d7e2cb" stroke-width="1.6"/>
+                <rect x="106" y="19" width="112" height="99" rx="2" fill="#f5f5e9" stroke-width="1.9"/>
+                <path d="M106 35h112" stroke-width="1.4"/>
+                <path d="M119 15v9m15-9v9m15-9v9m15-9v9m15-9v9m15-9v9m14-9v9" stroke-width="2.5"/>
+                <circle cx="123" cy="49" r="5.6" fill="#527e53"/><path d="m120 49 2.2 2.5 4-5" stroke="#f5f5e9" stroke-width="1.3"/>
+                <circle cx="123" cy="66" r="5.6" fill="#527e53"/><path d="m120 66 2.2 2.5 4-5" stroke="#f5f5e9" stroke-width="1.3"/>
+                <path d="M137 47h43m-43 5h27m-27 12h34m-34 5h24M115 78h93" stroke-width="1.2"/>
+                <g stroke="none" fill="#94b18b"><circle cx="122" cy="88" r="2.7"/><circle cx="134" cy="88" r="2.7"/><circle cx="158" cy="88" r="2.7"/><circle cx="182" cy="88" r="2.7"/><circle cx="146" cy="99" r="2.7"/><circle cx="170" cy="99" r="2.7"/><circle cx="194" cy="99" r="2.7"/></g>
+                <g stroke="none" fill="#48784d"><circle cx="146" cy="88" r="2.7"/><circle cx="170" cy="88" r="2.7"/><circle cx="194" cy="88" r="2.7"/><circle cx="134" cy="99" r="2.7"/><circle cx="158" cy="99" r="2.7"/></g>
+                <g stroke="none" fill="#c0cdb7"><circle cx="122" cy="99" r="2.7"/><circle cx="182" cy="99" r="2.7"/></g>
+              </g>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-file"><svg class="icon" aria-hidden="true"><use href="#file"/></svg>index.html <span class="dot" aria-hidden="true">·</span> <span data-bytes="habits">38,372 B</span></div>
+            <h3>Tiny Habits</h3>
+            <p class="description">Check off a daily habit and see seven weeks of small wins in dots.</p>
+            <a class="open" href="apps/tiny-habits/index.html">Open habits <svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+        </article>
+        <article class="card garden">
+          <div class="art-panel" aria-hidden="true">
+            <svg viewBox="0 0 312 146" fill="none">
+              <g color="#b39985"><use href="#registration" x="24" y="20"/><use href="#registration" x="288" y="126"/></g>
+              <g stroke="#99583b" stroke-linejoin="round" stroke-linecap="round">
+                <path d="m83 104 89 23 61-22-91-22Z" fill="#e5c7a8" stroke-width="1.2"/>
+                <path d="m88 91 53-16 85 20-54 20Z" fill="#bc8966" stroke-width="1.8"/>
+                <path d="m88 91 84 24v11l-84-24Z" fill="#cb9c78" stroke-width="1.8"/>
+                <path d="m172 115 54-20v11l-54 20Z" fill="#ac7656" stroke-width="1.8"/>
+                <path d="m108 97 54-17m-31 24 54-19m-32 25 54-20m-102-4 84 24m-65-30 84 23" opacity=".75"/>
+                <g fill="#eed6b7" stroke-width="1.85">
+                  <path d="M126 92q2-13 0-21m0 8q-12 0-16-11 11 0 16 11Zm1-3q0-11 11-16 2 11-11 16Z"/>
+                  <path d="M183 98q-1-18 5-36m-4 19q-15-2-18-17 14 1 18 17Zm2-6q4-17 19-20-3 15-19 20Z"/>
+                  <path d="M153 85q-1-24 3-45m-2 23q-19-4-24-23 16 1 24 23Zm1-9q3-22 23-27-4 21-23 27Z" fill="#e5bd93"/>
+                </g>
+                <path d="m136 46 14 14m10-12 11-13m-3 33 10 10m14-9 8-7" stroke-width="1"/>
+                <path d="M118 92q8-2 13 1m14-10q9-2 15 1m14 14q8-2 15 0" stroke-width="1.2"/>
+              </g>
+            </svg>
+          </div>
+          <div class="card-info">
+            <div class="card-file"><svg class="icon" aria-hidden="true"><use href="#file"/></svg>index.html <span class="dot" aria-hidden="true">·</span> <span data-bytes="garden">36,784 B</span></div>
+            <h3>Focus Garden</h3>
+            <p class="description">Set a focus timer. Each finished session grows a plant in your garden.</p>
+            <a class="open" href="apps/focus-garden/index.html">Open garden <svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="foot-inner container">
+      <span>OneFile Kit <span aria-hidden="true">/</span> <span lang="ja">道具箱</span></span>
+      <span class="foot-file"><svg class="icon" aria-hidden="true"><use href="#file"/></svg>index.html · <span id="file-size">19,383</span> B</span>
+    </div>
+  </footer>
+</body>
+</html>

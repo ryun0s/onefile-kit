@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneFile Kit</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f4efe4;
+  --surface: #faf7ef;
+  --ink: #2e2a24;
+  --muted: #695f50;
+  --line: #cfc4ab;
+  --accent: #44546e;
+  --accent-ink: #44546e;
+  --on-accent: #fff;
+  --accent-wash: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  --mono: ui-monospace, 'SF Mono', monospace;
+  --radius: 10px;
+  font-family: system-ui, sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #211f1a;
+  --surface: #2c2922;
+  --ink: #f4efe4;
+  --muted: #c2b7a3;
+  --line: #595142;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+button, input, select, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.kit-shell { display: flex; flex-direction: column; width: min(100% - 44px, 900px); min-height: 100vh; margin: auto; }
+.kit-top { display: flex; align-items: center; gap: 10px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.kit-wordmark { font-size: 17px; font-weight: 780; letter-spacing: -.05em; }
+.kit-logo { display: block; width: 29px; height: 29px; color: var(--ink); }
+.kit-heading { padding: 34px 0 22px; }
+.kit-name { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; row-gap: 4px; }
+.kit-name h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); letter-spacing: -.065em; line-height: 1.12; font-weight: 730; }
+.kit-japanese { font: 500 13px/1.5 var(--mono); letter-spacing: .12em; color: var(--accent-ink); }
+.kit-description { margin: 8px 0 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+.kit-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); }
+.kit-tab { display: inline-flex; align-items: center; gap: 8px; position: relative; color: var(--muted); padding: 12px 1px; background: transparent; border: 0; font-size: 14px; font-weight: 650; }
+.kit-tab::after { content: ''; position: absolute; inset: auto 0 -1px; height: 3px; background: var(--accent-ink); transform: scaleX(0); transition: transform .16s; }
+.kit-tab[aria-selected="true"] { color: var(--accent-ink); }
+.kit-tab[aria-selected="true"]::after { transform: scaleX(1); }
+.kit-tab svg { width: 16px; height: 16px; }
+.kit-main { flex: 1; padding: 22px 0 34px; }
+.kit-panel { min-width: 0; }
+.kit-footer { display: flex; justify-content: flex-end; padding: 15px 0 22px; border-top: 1px solid var(--line); }
+.kit-file { display: inline-flex; gap: 8px; align-items: center; font: 11px/1.5 var(--mono); letter-spacing: .02em; color: var(--muted); }
+.kit-file svg { width: 13px; height: 15px; }
+.kit-byte { padding-left: 8px; border-left: 1px solid var(--line); }
+.button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 42px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--surface); font-weight: 650; font-size: 14px; transition: transform .12s, border-color .12s, background .12s; }
+.button:enabled:hover { border-color: var(--accent-ink); }
+.button:enabled:active, .kit-tab:active, .kit-choice:active { transform: translateY(1px); }
+.button.primary { color: var(--on-accent); border-color: var(--accent); background: var(--accent); }
+.button.primary:enabled:hover { box-shadow: 0 0 0 1px var(--accent); }
+.empty-state { text-align: center; padding: 22px 14px; }
+.empty-state h2, .kit-settings h2 { margin: 0; font-weight: 710; font-size: 23px; line-height: 1.23; letter-spacing: -.04em; }
+.empty-state p { font-size: 14px; line-height: 1.6; color: var(--muted); margin: 8px 0 0; }
+.kit-settings { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: var(--surface); }
+.kit-fieldset { border: 0; border-top: 1px solid var(--line); min-width: 0; padding: 14px 0 0; margin: 22px 0; }
+.kit-fieldset legend { font-weight: 650; font-size: 14px; padding: 0 8px 0 0; }
+.kit-choices { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.kit-choice { position: relative; display: inline-flex; gap: 8px; align-items: center; min-height: 40px; border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.kit-choice:has(input:checked) { border-color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent-ink); }
+.kit-choice:has(:focus-visible) { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+.kit-choice input[type="radio"] { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+.kit-swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #0003; background: var(--swatch); }
+.kit-custom { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.kit-custom input { cursor: pointer; width: 32px; height: 29px; border: 1px solid var(--line); border-radius: 4px; padding: 2px; background: var(--surface); }
+.kit-settings-end { border-top: 1px solid var(--line); padding-top: 14px; }
+.kit-dialog { width: min(390px, calc(100% - 36px)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); padding: 22px; box-shadow: 0 12px 48px #0002; }
+.kit-dialog::backdrop { background: rgb(25 22 18 / 48%); }
+.kit-dialog h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.035em; }
+.kit-dialog p { margin: 8px 0 22px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.kit-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.kit-toast { position: fixed; z-index: 3; bottom: 22px; left: 50%; width: max-content; max-width: calc(100vw - 36px); transform: translate(-50%, 6px); opacity: 0; transition: opacity .16s, transform .16s; pointer-events: none; border-radius: 6px; padding: 10px 16px; color: var(--paper); background: var(--ink); font-size: 13px; }
+.kit-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 520px) {
+  .kit-shell { width: calc(100% - 28px); }
+  .kit-top { padding: 14px 0; }
+  .kit-heading { padding: 22px 0 14px; }
+  .kit-main { padding: 14px 0 22px; }
+  .kit-settings { padding: 14px; }
+}
+/* APP:CSS:START */
+.focus-card {
+  padding: clamp(18px, 4vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(205px, .96fr);
+  align-items: center;
+  gap: clamp(22px, 5vw, 60px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.dial {
+  display: grid;
+  width: min(100%, 254px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  color: var(--accent-ink);
+}
+.dial > * { grid-area: 1 / 1; }
+.dial svg { width: 100%; height: 100%; overflow: visible; }
+.dial-rim { fill: var(--paper); stroke: var(--line); stroke-width: .8; }
+.dial-face { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.dial-ticks { stroke: var(--line); stroke-linecap: round; }
+.dial-ticks .major { stroke: var(--accent-ink); }
+.dial-track { fill: none; stroke: var(--line); stroke-width: 2; }
+.dial-progress { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transform-origin: center; transform: rotate(-90deg); }
+.dial-readout { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.dial-readout .timer-value {
+  font: 550 clamp(36px, 6.6vw, 56px)/1.07 var(--mono);
+  letter-spacing: -.085em;
+  font-variant-numeric: tabular-nums;
+  margin-inline-end: .085em;
+  color: var(--ink);
+}
+.dial-readout .timer-state { font: 500 10px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+.session-controls { max-width: 320px; width: 100%; }
+.focus-card h2, .garden-section h2 { color: var(--ink); margin: 0; font: 700 clamp(21px, 3vw, 28px)/1.15 system-ui, sans-serif; letter-spacing: -.045em; }
+.duration-field { border: 0; padding: 0; margin: 21px 0 14px; min-inline-size: 0; }
+.duration-field legend { padding: 0; margin-bottom: 7px; font: 500 12px/1.4 var(--mono); color: var(--muted); }
+.duration-choices { display: flex; gap: 4px; }
+.duration-choices button { flex: 1; min-height: 38px; padding: 5px 2px; font: 550 13px/1.25 var(--mono); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; transition: transform .12s ease, background-color .16s ease; }
+.duration-choices button[aria-pressed="true"] { border-color: var(--accent-ink); background: var(--accent-wash); color: var(--accent-ink); box-shadow: inset 0 0 0 1px var(--accent-ink); }
+.duration-choices button:disabled { cursor: default; }
+.duration-choices button:disabled[aria-pressed="false"] { opacity: .6; }
+.duration-choices button:active:not(:disabled), .end-session:active { transform: translateY(1px); }
+.session-controls .session-toggle { width: 100%; min-height: 43px; justify-content: center; display: flex; align-items: center; gap: 9px; }
+.session-toggle svg { width: 16px; height: 16px; fill: currentColor; }
+.end-session { display: block; margin: 10px auto 0; padding: 6px 12px; font: inherit; font-size: 13px; background: transparent; color: var(--accent-ink); border: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.end-session[hidden], .session-toggle svg[hidden] { display: none; }
+.garden-section { margin-top: 28px; }
+.garden-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 9px 14px; flex-wrap: wrap; }
+.today-focus { display: flex; align-items: baseline; gap: 7px; margin: 0; color: var(--muted); font-size: 13px; }
+.today-focus strong { color: var(--accent-ink); font: 650 16px/1.25 var(--mono); }
+.plot-grid { list-style: none; padding: 0; margin: 12px 0 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 1px; background: var(--line); }
+.plot { background: var(--surface); min-width: 0; min-height: 70px; display: grid; place-items: center; padding: 6px; }
+.plot svg { width: min(100%, 68px); height: 64px; overflow: visible; }
+.plot .plant-image { color: var(--accent-ink); }
+.plot .vacant-image { color: var(--line); }
+.plot.is-new .plant-image { animation: emerge .28s ease-out both; transform-origin: bottom; }
+@keyframes emerge { from { opacity: .2; transform: translateY(4px) scale(.88); } to { opacity: 1; transform: none; } }
+.garden-note { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.plant-drawings { width: 0; height: 0; display: block; position: absolute; overflow: hidden; }
+@media (max-width: 580px) {
+  .focus-card { padding: 14px; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(145px, .92fr); }
+  .duration-field { margin-top: 13px; }
+  .duration-choices button { font-size: 12px; }
+  .focus-card h2, .garden-section h2 { font-size: 21px; }
+  .dial-readout .timer-state { font-size: 8px; }
+  .plot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 405px) {
+  .focus-card { grid-template-columns: 1fr; gap: 10px; }
+  .dial { width: min(100%, 171px); }
+  .session-controls { margin-inline: auto; }
+  .session-controls h2 { text-align: center; }
+  .duration-field { margin: 6px 0 9px; }
+  .duration-field legend { margin-bottom: 3px; }
+  .plot { min-height: 58px; }
+  .plot svg { height: 50px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plot.is-new .plant-image { animation: none; }
+  .duration-choices button { transition: none; }
+}
+/* APP:CSS:END */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="kit-shell">
+  <header>
+    <div class="kit-top">
+      <svg class="kit-logo" viewBox="0 0 34 34" aria-hidden="true"><rect x=".5" y=".5" width="33" height="33" rx="7" fill="#44546e"/><g fill="none" stroke="#f4efe4" stroke-width="1.45" stroke-linejoin="round"><path d="M9 10H7v17h14v-2"/><path d="M11 6h9l6 6v11H11z M20 6v6h6"/><path d="M14 16h8m-8 3h5"/></g></svg>
+      <span class="kit-wordmark">OneFile Kit</span>
+    </div>
+    <div class="kit-heading">
+      <div class="kit-name"><h1 id="app-title"></h1><span class="kit-japanese" lang="ja" id="app-japanese"></span></div>
+      <p class="kit-description" id="app-description"></p>
+    </div>
+    <div class="kit-tabs" role="tablist" aria-label="App views">
+      <button class="kit-tab" id="workspace-tab" type="button" role="tab" aria-selected="true" aria-controls="workspace">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M3 7.5h14m-9 0v9"/></svg><span id="app-tab"></span>
+      </button>
+      <button class="kit-tab" id="settings-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="settings">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h6m4 0h6M2 14h9m4 0h3"/><circle cx="10" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg>Settings
+      </button>
+    </div>
+  </header>
+  <main class="kit-main">
+    <section class="kit-panel" role="tabpanel" aria-labelledby="workspace-tab" tabindex="0" id="workspace">
+      <!-- APP:BODY:START -->
+<svg xmlns="http://www.w3.org/2000/svg" class="plant-drawings" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="soil-mark" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+      <path d="M14 50q7-2.3 13-1.7t12-.2q5-.8 10 1.2M19 53.6l5-.8m12.5 1.6 5-.7"/>
+    </g>
+    <g id="sprout" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M31 48c.4-5 .7-10.1-1.9-14.1m1.5 8q.8-7 6.4-10"/>
+      <path d="M30.8 38c-6.1.1-9.7-3.9-10.2-9.1 5.1.5 9.6 2.3 10.2 9.1Zm1.5-.9c-.2-5.8 3.3-8.8 10.7-10-.3 6.3-4.2 9.5-10.7 10Z" fill="var(--accent-wash)"/>
+      <use href="#soil-mark"/>
+    </g>
+    <g id="leafy" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M31 48.4c-1.2-10.1 2.3-17.9 1.2-29.4" fill="none"/>
+      <path d="M31 33.2c-8.1-.3-12.8-5.3-13.3-13 7.9 1.1 12.8 5.3 13.3 13Zm1.3-7.6c-1.8-6.7 1.1-12.9 8.3-16.5 1 7.6-1.5 13-8.3 16.5Zm-1.6 15c2.4-8 8.2-11.9 16.1-12-2.4 7.8-8.6 11.9-16.1 12Z" fill="var(--accent-wash)"/>
+      <path d="m30.6 32.7-7-6.3m8 13.6 9-6.6" fill="none" stroke-width="1"/>
+      <use href="#soil-mark"/>
+    </g>
+    <g id="bloom" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M30.2 48.2q-.1-15.1 4.1-28.2" fill="none"/>
+      <path d="M30.5 40.8c-8.2-.1-13.3-5.2-15-13.6 8.8.9 14.1 5.4 15 13.6Zm1.2-7.1c2.7-7.1 8-10.5 15.2-10.5-2.4 6.9-7.6 10.1-15.2 10.5Z" fill="var(--accent-wash)"/>
+      <path d="m29.8 40-7.8-7m10.7-.1 7.9-5.3" fill="none" stroke-width="1"/>
+      <path d="M32.2 12.5c-5.5-7.7-9.2-2.3-6.2 1.3-6.7 1.1-4.3 6.5 1.5 6.4-2.1 6.4 3.9 7.2 6.7 1.5 3.9 5.3 8.5 2.4 5.9-3.1 6.4.2 7.8-5.5 1.8-6.9 3.2-5.3-1.4-8.4-5.1-3.4-.1-6.3-6.2-6.1-4.6 4.2Z" fill="var(--accent-wash)"/>
+      <circle cx="34.4" cy="15.4" r="3.7" fill="currentColor"/>
+      <use href="#soil-mark"/>
+    </g>
+    <g id="empty-plot" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.15">
+      <path d="M16 39.4q9-1.5 16-.8t15-1.2M20 43.8l8.2-.8m7.3-.3 5.4-.4"/>
+      <path d="M31.6 22.5v7.8m-3.9-3.9h7.8"/>
+    </g>
+  </defs>
+</svg>
+<section class="focus-card" aria-labelledby="session-heading">
+  <div class="dial">
+    <svg viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+      <circle class="dial-rim" cx="110" cy="110" r="108"/>
+      <g class="dial-ticks" id="dial-ticks"></g>
+      <circle class="dial-face" cx="110" cy="110" r="86"/>
+      <circle class="dial-track" cx="110" cy="110" r="88"/>
+      <circle class="dial-progress" id="dial-progress" cx="110" cy="110" r="88" pathLength="100" stroke-dasharray="100 100"/>
+    </svg>
+    <div class="dial-readout">
+      <span class="timer-value" id="timer-value" role="timer" aria-label="Time remaining">25:00</span>
+      <span class="timer-state" id="timer-state" aria-live="polite">Ready to focus</span>
+    </div>
+  </div>
+  <div class="session-controls">
+    <h2 id="session-heading">Focus session</h2>
+    <fieldset class="duration-field" id="duration-field">
+      <legend>Duration</legend>
+      <div class="duration-choices" id="duration-choices">
+        <button type="button" data-minutes="15" aria-pressed="false">15 min</button>
+        <button type="button" data-minutes="25" aria-pressed="true">25 min</button>
+        <button type="button" data-minutes="50" aria-pressed="false">50 min</button>
+      </div>
+    </fieldset>
+    <button type="button" class="button primary session-toggle" id="session-toggle">
+      <svg id="play-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.6a.8.8 0 0 1 1.2-.7l8.2 5.4a.8.8 0 0 1 0 1.4l-8.2 5.4a.8.8 0 0 1-1.2-.7z"/></svg>
+      <svg id="pause-icon" viewBox="0 0 16 16" aria-hidden="true" hidden><rect x="3" y="2" width="3.5" height="12" rx=".8"/><rect x="9.5" y="2" width="3.5" height="12" rx=".8"/></svg>
+      <span id="session-action">Start session</span>
+    </button>
+    <button class="end-session" id="end-session" type="button" hidden>End session</button>
+  </div>
+</section>
+<section class="garden-section" aria-labelledby="garden-heading">
+  <div class="garden-heading">
+    <h2 id="garden-heading">Your garden</h2>
+    <p class="today-focus">Today’s focus <strong id="today-minutes">0 min</strong></p>
+  </div>
+  <ul class="plot-grid" id="plot-grid" aria-label="Garden plots"></ul>
+  <p class="garden-note" id="garden-note">Finish a session to plant your first sprout.</p>
+</section>
+<!-- APP:BODY:END -->
+    </section>
+    <section class="kit-panel kit-settings" role="tabpanel" aria-labelledby="settings-tab" tabindex="0" id="settings" hidden>
+      <h2>Appearance</h2>
+      <fieldset class="kit-fieldset"><legend>Theme</legend>
+        <div class="kit-choices">
+          <label class="kit-choice"><input type="radio" name="theme" value="light">Light</label>
+          <label class="kit-choice"><input type="radio" name="theme" value="dark">Dark</label>
+        </div>
+      </fieldset>
+      <fieldset class="kit-fieldset"><legend>Accent color</legend>
+        <div class="kit-choices">
+          <label class="kit-choice"><input type="radio" name="accent" value="#44546e"><span class="kit-swatch" style="--swatch:#44546e"></span>Ink blue</label>
+          <label class="kit-choice"><input type="radio" name="accent" value="#3e7d4e"><span class="kit-swatch" style="--swatch:#3e7d4e"></span>Leaf green</label>
+          <label class="kit-choice"><input type="radio" name="accent" value="#b4552d"><span class="kit-swatch" style="--swatch:#b4552d"></span>Terracotta</label>
+          <label class="kit-custom">Custom <input id="custom-color" type="color" value="#44546e"></label>
+        </div>
+      </fieldset>
+      <div class="kit-settings-end"><button type="button" class="button" id="reset-settings">Reset appearance</button></div>
+    </section>
+  </main>
+  <footer class="kit-footer">
+    <span class="kit-file">
+      <svg viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-linejoin="round" aria-hidden="true"><path d="M2 1h6l4 4v10H2zM8 1v4h4M4 9h6m-6 3h4"/></svg>
+      <span id="file-name"></span><span class="kit-byte"><span id="file-size">36,784</span> bytes</span>
+    </span>
+  </footer>
+</div>
+<dialog class="kit-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2><p id="confirm-message"></p>
+    <div class="kit-dialog-actions"><button type="submit" class="button" value="cancel" autofocus>Cancel</button><button type="submit" class="button primary" value="confirm" id="confirm-accept"></button></div>
+  </form>
+</dialog>
+<div class="kit-toast" id="kit-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<script>
+'use strict';
+// APP:CONFIG:START
+const durations = [15, 25, 50];
+const minuteMs = 60_000;
+const APP = {
+  title: 'Focus Garden', japanese: '集中の庭', description: 'Grow a garden, one focus session at a time.',
+  tab: 'Garden', accent: '#b4552d', key: 'onefile.focus-garden.v1',
+  initial: {minutes: 25, timer: null, plants: []},
+  restore(raw) {
+    const minutes = durations.includes(raw?.minutes) ? raw.minutes : 25;
+    const timer = raw?.timer;
+    const validTimer = timer && typeof timer.id === 'string' && durations.includes(timer.minutes) &&
+      (timer.endAt === null || Number.isFinite(timer.endAt) && timer.endAt > 0) &&
+      Number.isFinite(timer.remainingMs) && timer.remainingMs > 0 && timer.remainingMs <= timer.minutes * minuteMs;
+    const seen = new Set();
+    const plants = (Array.isArray(raw?.plants) ? raw.plants : []).filter(plant => {
+      if (!plant || typeof plant.id !== 'string' || seen.has(plant.id) || !durations.includes(plant.minutes) ||
+          !Number.isFinite(plant.endedAt) || !Number.isFinite(new Date(plant.endedAt).getTime())) return false;
+      seen.add(plant.id);
+      return true;
+    });
+    return {minutes: validTimer ? timer.minutes : minutes, timer: validTimer && !seen.has(timer.id) ? timer : null, plants};
+  }
+};
+// APP:CONFIG:END
+const byId = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+const validColor = color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color);
+const defaults = () => ({settings: {theme: 'light', accent: APP.accent}, data: clone(APP.initial)});
+
+function restoreState(serialized) {
+  const fresh = defaults();
+  if (!serialized) return fresh;
+  try {
+    const saved = JSON.parse(serialized);
+    const preferences = saved?.settings;
+    if (preferences?.theme === 'dark') fresh.settings.theme = 'dark';
+    if (validColor(preferences?.accent)) fresh.settings.accent = preferences.accent.toLowerCase();
+    if (saved?.data && typeof saved.data === 'object' && !Array.isArray(saved.data)) {
+      fresh.data = APP.restore ? APP.restore(saved.data) : {...fresh.data, ...saved.data};
+    }
+  } catch { /* An unreadable save reopens with this app's defaults. */ }
+  return fresh;
+}
+
+let toastTimer;
+function toast(message) {
+  const node = byId('kit-toast');
+  clearTimeout(toastTimer);
+  node.textContent = message;
+  node.classList.add('visible');
+  toastTimer = setTimeout(() => { node.classList.remove('visible'); node.textContent = ''; }, 2600);
+}
+
+function createStore() {
+  let lastSave = null;
+  try { lastSave = localStorage.getItem(APP.key); } catch { /* Storage can be unavailable for a local file. */ }
+  let state = restoreState(lastSave);
+  const listeners = new Set();
+  const notify = () => { for (const listener of listeners) listener(state); };
+  window.addEventListener('storage', event => {
+    if (event.key !== APP.key && event.key !== null) return;
+    // An older event can arrive after this tab has already read or written a newer save.
+    let latest;
+    try {
+      if (event.storageArea && event.storageArea !== localStorage) return;
+      latest = localStorage.getItem(APP.key);
+    } catch { return; }
+    if (latest === lastSave) return;
+    lastSave = latest;
+    state = restoreState(latest);
+    notify();
+  });
+  return {
+    get: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(state);
+      return () => listeners.delete(listener);
+    },
+    update(change) {
+      // Start from the newest save if another window wrote before its storage event arrived.
+      try {
+        const latest = localStorage.getItem(APP.key);
+        if (latest !== lastSave) { state = restoreState(latest); lastSave = latest; }
+      } catch { /* The current session still works in memory. */ }
+      const next = clone(state);
+      change(next);
+      state = next;
+      try {
+        const serialized = JSON.stringify(state);
+        localStorage.setItem(APP.key, serialized);
+        lastSave = serialized;
+      } catch { queueMicrotask(() => toast('Changes are available for this session only.')); }
+      notify();
+    }
+  };
+}
+
+function emptyState({title, message}) {
+  const box = document.createElement('div');
+  box.className = 'empty-state';
+  const heading = document.createElement('h2');
+  const body = document.createElement('p');
+  heading.textContent = title;
+  body.textContent = message;
+  box.append(heading, body);
+  return box;
+}
+
+function confirmAction({title, message, confirmLabel = 'Confirm'}) {
+  const dialog = byId('confirm-dialog');
+  if (dialog.open) return Promise.resolve(false);
+  byId('confirm-title').textContent = title;
+  byId('confirm-message').textContent = message;
+  byId('confirm-accept').textContent = confirmLabel;
+  dialog.returnValue = 'cancel';
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'confirm'), {once: true});
+    dialog.showModal();
+  });
+}
+
+function selectTab(panel, focus = false) {
+  for (const tab of tabs) {
+    const selected = tab.getAttribute('aria-controls') === panel;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    byId(tab.getAttribute('aria-controls')).hidden = !selected;
+    if (selected && focus) tab.focus();
+  }
+}
+const tabs = [...document.querySelectorAll('.kit-tab')];
+tabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => selectTab(tab.getAttribute('aria-controls')));
+  tab.addEventListener('keydown', event => {
+    const next = {ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1}[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    selectTab(tabs[next].getAttribute('aria-controls'), true);
+  });
+});
+
+// Pick readable foregrounds even when a user selects a very pale or dark accent.
+function luminance(hex) {
+  const channels = hex.slice(1).match(/../g).map(part => {
+    const s = parseInt(part, 16) / 255;
+    return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4;
+  });
+  return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+}
+function contrast(a, b) {
+  return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+}
+const store = createStore();
+byId('app-title').textContent = APP.title;
+byId('app-japanese').textContent = APP.japanese;
+byId('app-description').textContent = APP.description;
+byId('app-tab').textContent = APP.tab;
+document.title = APP.title + ' · OneFile Kit';
+const filename = location.pathname.split('/').pop();
+try { byId('file-name').textContent = decodeURIComponent(filename || 'index.html'); }
+catch { byId('file-name').textContent = filename; }
+// A distributed file may carry a measured byte count. Use 00,000 for a new estimate after editing.
+if (byId('file-size').textContent === '00,000') {
+  const size = new Blob(['<!doctype html>\n', document.documentElement.outerHTML]).size;
+  byId('file-size').textContent = size.toLocaleString('en-US');
+}
+
+let appliedAppearance;
+store.subscribe(({settings}) => {
+  const appearance = settings.theme + settings.accent;
+  if (appliedAppearance === appearance) return;
+  appliedAppearance = appearance;
+  const root = document.documentElement;
+  root.dataset.theme = settings.theme;
+  const dark = settings.theme === 'dark';
+  const lightness = luminance(settings.accent);
+  root.style.setProperty('--accent', settings.accent);
+  root.style.setProperty('--on-accent', contrast(lightness, 1) >= contrast(lightness, 0) ? '#fff' : '#000');
+  const tone = dark ? '#f4efe4' : '#2e2a24';
+  // Gradually tint dark accents on dark paper (and shade pale accents on light paper).
+  const channel = (color, i) => parseInt(color.slice(i, i + 2), 16);
+  const background = luminance(dark ? '#2c2922' : '#f4efe4');
+  let ink = settings.accent;
+  for (let step = 1; contrast(luminance(ink), background) < 4.8 && step <= 10; step++) {
+    ink = '#' + [1, 3, 5].map(i => Math.round(channel(settings.accent, i) * (1 - step / 10) + channel(tone, i) * step / 10).toString(16).padStart(2, '0')).join('');
+  }
+  root.style.setProperty('--accent-ink', ink);
+  document.querySelectorAll('input[name="theme"]').forEach(input => { input.checked = input.value === settings.theme; });
+  document.querySelectorAll('input[name="accent"]').forEach(input => { input.checked = input.value === settings.accent; });
+  byId('custom-color').value = settings.accent;
+});
+byId('settings').addEventListener('change', event => {
+  const input = event.target;
+  if (input.name === 'theme') store.update(s => { s.settings.theme = input.value; });
+  if (input.name === 'accent' || input.id === 'custom-color') store.update(s => { s.settings.accent = input.value; });
+});
+byId('reset-settings').addEventListener('click', async () => {
+  if (await confirmAction({title: 'Reset appearance?', message: 'Restore the light theme and the original accent color.', confirmLabel: 'Reset'})) {
+    store.update(s => { s.settings = defaults().settings; });
+    toast('Appearance restored.');
+  }
+});
+
+// APP:SCRIPT:START
+const svgNS = 'http://www.w3.org/2000/svg';
+const choiceButtons = Array.from(byId('duration-choices').querySelectorAll('button'));
+let renderedDay = '', clockSeconds = -1, pendingPlantId = null;
+
+for (let tick = 0; tick < 60; tick++) {
+  const major = tick % 5 === 0;
+  const mark = document.createElementNS(svgNS, 'path');
+  mark.setAttribute('d', major ? 'M110 7v8' : 'M110 9v4');
+  mark.setAttribute('transform', `rotate(${tick * 6} 110 110)`);
+  mark.setAttribute('stroke-width', major ? '1.8' : '1.15');
+  if (major) mark.setAttribute('class', 'major');
+  byId('dial-ticks').append(mark);
+}
+
+function localDay(time) {
+  const date = new Date(time);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function plantStage(subsequentMinutes) {
+  if (subsequentMinutes >= 100) return 'bloom';
+  if (subsequentMinutes >= 50) return 'leafy';
+  return 'sprout';
+}
+
+function makePlot(plant, subsequentMinutes) {
+  const item = document.createElement('li');
+  item.className = 'plot';
+  const icon = document.createElementNS(svgNS, 'svg');
+  icon.setAttribute('viewBox', '0 0 64 60');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('focusable', 'false');
+  const graphic = document.createElementNS(svgNS, 'use');
+  const stage = plant ? plantStage(subsequentMinutes) : 'empty-plot';
+  graphic.setAttribute('href', '#' + stage);
+  icon.setAttribute('class', plant ? 'plant-image' : 'vacant-image');
+  if (plant) {
+    const stageLabel = {sprout: 'Sprout', leafy: 'Leafy plant', bloom: 'Flowering plant'}[stage];
+    const plantedOn = new Date(plant.endedAt).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'});
+    const description = `${stageLabel} · ${plant.minutes} min · ${plantedOn}`;
+    item.setAttribute('aria-label', description);
+    item.title = description;
+    item.classList.toggle('is-new', plant.id === pendingPlantId);
+  } else {
+    item.setAttribute('aria-hidden', 'true');
+  }
+  icon.append(graphic);
+  item.append(icon);
+  return item;
+}
+
+function renderGarden(plants, now) {
+  renderedDay = localDay(now);
+  const todayTotal = plants.reduce((sum, plant) => sum + (localDay(plant.endedAt) === renderedDay ? plant.minutes : 0), 0);
+  byId('today-minutes').textContent = `${todayTotal} min`;
+  const plots = document.createDocumentFragment();
+  let subsequentMinutes = 0;
+  for (let i = plants.length - 1; i >= 0; i--) {
+    plots.prepend(makePlot(plants[i], subsequentMinutes));
+    subsequentMinutes += plants[i].minutes;
+  }
+  const plotCount = Math.max(6, Math.ceil(plants.length / 6) * 6);
+  for (let i = plants.length; i < plotCount; i++) plots.append(makePlot(null, 0));
+  byId('plot-grid').replaceChildren(plots);
+  const count = `${plants.length} ${plants.length === 1 ? 'plant' : 'plants'}`;
+  byId('garden-note').textContent = plants.length ? `${count}. Each plant grows leaves after 50 more focus minutes and flowers after 100.` : 'Finish a session to plant your first sprout.';
+}
+
+function timeLeft(timer, now) {
+  return timer.endAt === null ? timer.remainingMs : Math.max(0, Math.min(timer.minutes * minuteMs, timer.endAt - now));
+}
+
+function renderClock(data, now) {
+  const total = data.minutes * minuteMs;
+  const remaining = data.timer ? timeLeft(data.timer, now) : total;
+  const seconds = Math.ceil(remaining / 1000);
+  if (clockSeconds === seconds) return;
+  clockSeconds = seconds;
+  const minutesText = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const secondsText = String(seconds % 60).padStart(2, '0');
+  byId('timer-value').textContent = `${minutesText}:${secondsText}`;
+  byId('dial-progress').setAttribute('stroke-dasharray', `${Math.min(100, seconds * 100_000 / total)} 100`);
+}
+
+function finishExpired(now) {
+  const current = store.get().data.timer;
+  if (!current || current.endAt === null || current.endAt > now) return false;
+  let completed = false;
+  pendingPlantId = current.id;
+  store.update(state => {
+    const timer = state.data.timer;
+    if (!timer || timer.id !== current.id || timer.endAt === null || timer.endAt > now) return;
+    if (!state.data.plants.some(plant => plant.id === timer.id)) {
+      state.data.plants.push({id: timer.id, minutes: timer.minutes, endedAt: timer.endAt});
+      completed = true;
+    }
+    state.data.timer = null;
+  });
+  pendingPlantId = null;
+  if (completed) toast('Session complete. A new sprout!');
+  return true;
+}
+
+function tickClock() {
+  const now = Date.now();
+  if (finishExpired(now)) return;
+  const data = store.get().data;
+  renderClock(data, now);
+  if (localDay(now) !== renderedDay) renderGarden(data.plants, now);
+}
+
+store.subscribe(({data}) => {
+  const running = !!data.timer && data.timer.endAt !== null;
+  const paused = !!data.timer && !running;
+  byId('duration-field').disabled = !!data.timer;
+  choiceButtons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.minutes) === data.minutes)));
+  byId('session-action').textContent = running ? 'Pause' : paused ? 'Resume' : 'Start session';
+  byId('timer-state').textContent = running ? 'Focusing' : paused ? 'Paused' : 'Ready to focus';
+  byId('play-icon').toggleAttribute('hidden', running);
+  byId('pause-icon').toggleAttribute('hidden', !running);
+  byId('end-session').hidden = !paused;
+  clockSeconds = -1;
+  const now = Date.now();
+  renderClock(data, now);
+  renderGarden(data.plants, now);
+});
+
+byId('duration-choices').addEventListener('click', event => {
+  const button = event.target.closest('button[data-minutes]');
+  if (!button || byId('duration-field').disabled) return;
+  store.update(({data}) => { if (!data.timer) data.minutes = Number(button.dataset.minutes); });
+});
+
+byId('session-toggle').addEventListener('click', () => {
+  const now = Date.now();
+  if (finishExpired(now)) return;
+  const visibleTimer = store.get().data.timer;
+  store.update(({data}) => {
+    // A second window may have completed or paused the visible session already.
+    if (data.timer?.id !== visibleTimer?.id || data.timer?.endAt !== visibleTimer?.endAt) return;
+    if (!data.timer) {
+      const id = globalThis.crypto?.randomUUID?.() || `${now}-${Math.random().toString(36).slice(2)}`;
+      const remainingMs = data.minutes * minuteMs;
+      data.timer = {id, minutes: data.minutes, remainingMs, endAt: now + remainingMs};
+    } else if (data.timer.endAt === null) {
+      data.timer.endAt = now + data.timer.remainingMs;
+    } else {
+      data.timer.remainingMs = timeLeft(data.timer, now);
+      data.timer.endAt = null;
+    }
+  });
+});
+
+byId('end-session').addEventListener('click', async () => {
+  const original = store.get().data.timer;
+  if (!original || original.endAt !== null) return;
+  const confirmed = await confirmAction({title: 'End this session?', message: 'Only finished sessions add a plant and focus minutes to your garden.', confirmLabel: 'End session'});
+  if (!confirmed) return;
+  let ended = false;
+  store.update(({data}) => {
+    if (data.timer?.id === original.id && data.timer.endAt === null) {
+      data.timer = null;
+      ended = true;
+    }
+  });
+  if (ended) {
+    byId('session-toggle').focus();
+    toast('Session ended.');
+  }
+});
+
+window.setInterval(tickClock, 250);
+window.addEventListener('pageshow', tickClock);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tickClock(); });
+tickClock();
+// APP:SCRIPT:END
+</script>
+</body>
+</html>

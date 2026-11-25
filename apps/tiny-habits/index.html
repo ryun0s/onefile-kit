@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneFile Kit</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f4efe4;
+  --surface: #faf7ef;
+  --ink: #2e2a24;
+  --muted: #695f50;
+  --line: #cfc4ab;
+  --accent: #44546e;
+  --accent-ink: #44546e;
+  --on-accent: #fff;
+  --accent-wash: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  --mono: ui-monospace, 'SF Mono', monospace;
+  --radius: 10px;
+  font-family: system-ui, sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #211f1a;
+  --surface: #2c2922;
+  --ink: #f4efe4;
+  --muted: #c2b7a3;
+  --line: #595142;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+button, input, select, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.kit-shell { display: flex; flex-direction: column; width: min(100% - 44px, 900px); min-height: 100vh; margin: auto; }
+.kit-top { display: flex; align-items: center; gap: 10px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.kit-wordmark { font-size: 17px; font-weight: 780; letter-spacing: -.05em; }
+.kit-logo { display: block; width: 29px; height: 29px; color: var(--ink); }
+.kit-heading { padding: 34px 0 22px; }
+.kit-name { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; row-gap: 4px; }
+.kit-name h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); letter-spacing: -.065em; line-height: 1.12; font-weight: 730; }
+.kit-japanese { font: 500 13px/1.5 var(--mono); letter-spacing: .12em; color: var(--accent-ink); }
+.kit-description { margin: 8px 0 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+.kit-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); }
+.kit-tab { display: inline-flex; align-items: center; gap: 8px; position: relative; color: var(--muted); padding: 12px 1px; background: transparent; border: 0; font-size: 14px; font-weight: 650; }
+.kit-tab::after { content: ''; position: absolute; inset: auto 0 -1px; height: 3px; background: var(--accent-ink); transform: scaleX(0); transition: transform .16s; }
+.kit-tab[aria-selected="true"] { color: var(--accent-ink); }
+.kit-tab[aria-selected="true"]::after { transform: scaleX(1); }
+.kit-tab svg { width: 16px; height: 16px; }
+.kit-main { flex: 1; padding: 22px 0 34px; }
+.kit-panel { min-width: 0; }
+.kit-footer { display: flex; justify-content: flex-end; padding: 15px 0 22px; border-top: 1px solid var(--line); }
+.kit-file { display: inline-flex; gap: 8px; align-items: center; font: 11px/1.5 var(--mono); letter-spacing: .02em; color: var(--muted); }
+.kit-file svg { width: 13px; height: 15px; }
+.kit-byte { padding-left: 8px; border-left: 1px solid var(--line); }
+.button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 42px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--surface); font-weight: 650; font-size: 14px; transition: transform .12s, border-color .12s, background .12s; }
+.button:enabled:hover { border-color: var(--accent-ink); }
+.button:enabled:active, .kit-tab:active, .kit-choice:active { transform: translateY(1px); }
+.button.primary { color: var(--on-accent); border-color: var(--accent); background: var(--accent); }
+.button.primary:enabled:hover { box-shadow: 0 0 0 1px var(--accent); }
+.empty-state { text-align: center; padding: 22px 14px; }
+.empty-state h2, .kit-settings h2 { margin: 0; font-weight: 710; font-size: 23px; line-height: 1.23; letter-spacing: -.04em; }
+.empty-state p { font-size: 14px; line-height: 1.6; color: var(--muted); margin: 8px 0 0; }
+.kit-settings { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: var(--surface); }
+.kit-fieldset { border: 0; border-top: 1px solid var(--line); min-width: 0; padding: 14px 0 0; margin: 22px 0; }
+.kit-fieldset legend { font-weight: 650; font-size: 14px; padding: 0 8px 0 0; }
+.kit-choices { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.kit-choice { position: relative; display: inline-flex; gap: 8px; align-items: center; min-height: 40px; border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.kit-choice:has(input:checked) { border-color: var(--accent-ink); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent-ink); }
+.kit-choice:has(:focus-visible) { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+.kit-choice input[type="radio"] { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+.kit-swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #0003; background: var(--swatch); }
+.kit-custom { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.kit-custom input { cursor: pointer; width: 32px; height: 29px; border: 1px solid var(--line); border-radius: 4px; padding: 2px; background: var(--surface); }
+.kit-settings-end { border-top: 1px solid var(--line); padding-top: 14px; }
+.kit-dialog { width: min(390px, calc(100% - 36px)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); padding: 22px; box-shadow: 0 12px 48px #0002; }
+.kit-dialog::backdrop { background: rgb(25 22 18 / 48%); }
+.kit-dialog h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.035em; }
+.kit-dialog p { margin: 8px 0 22px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.kit-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.kit-toast { position: fixed; z-index: 3; bottom: 22px; left: 50%; width: max-content; max-width: calc(100vw - 36px); transform: translate(-50%, 6px); opacity: 0; transition: opacity .16s, transform .16s; pointer-events: none; border-radius: 6px; padding: 10px 16px; color: var(--paper); background: var(--ink); font-size: 13px; }
+.kit-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 520px) {
+  .kit-shell { width: calc(100% - 28px); }
+  .kit-top { padding: 14px 0; }
+  .kit-heading { padding: 22px 0 14px; }
+  .kit-main { padding: 14px 0 22px; }
+  .kit-settings { padding: 14px; }
+}
+/* APP:CSS:START */
+.habit-workspace {
+  display: grid;
+  gap: 22px;
+}
+
+.habit-sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.habit-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.habit-heading-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.habit-section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.06rem,3vw,1.22rem);
+  letter-spacing: -.035em;
+  line-height: 1.24;
+}
+
+.habit-section-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.habit-meta,.record-table,.record-key,.habit-streak {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-meta,.record-key {
+  font-size: .73rem;
+  color: var(--muted);
+}
+
+.habit-form {
+  padding: 16px 22px 20px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 6px 8px;
+}
+
+.habit-form label {
+  font-weight: 650;
+  font-size: .83rem;
+}
+
+.habit-entry {
+  display: flex;
+  gap: 8px;
+  grid-column: 1/-1;
+}
+
+.habit-entry input {
+  font: inherit;
+  min-width: 0;
+  width: 100%;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  padding: 9px 12px;
+}
+
+.habit-entry .button {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.habit-plus {
+  font: 400 1.2em/1 var(--mono);
+}
+
+.habit-empty {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: flex-start;
+  padding: 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-wash);
+}
+
+.habit-empty .empty-state {
+  padding: 0;
+  text-align: left;
+  border: 0;
+  background: none;
+  min-height: 0;
+  display: block;
+}
+
+.habit-empty .empty-state :is(h2,h3,p) {
+  margin: 0;
+}
+
+.habit-empty .empty-state :is(h2,h3) {
+  font-size: 1.05rem;
+}
+
+.habit-empty .empty-state p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.habit-sketch {
+  color: var(--accent-ink);
+  width: 91px;
+  height: 80px;
+  flex: 0 0 auto;
+}
+
+.habit-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.habit-item {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.habit-toggle,.habit-remove {
+  background: none;
+  color: var(--ink);
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.habit-toggle {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0;
+}
+
+.habit-name {
+  font-size: .96rem;
+  font-weight: 620;
+  overflow-wrap: anywhere;
+}
+
+.habit-check {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1.5px solid var(--accent-ink);
+  color: var(--surface);
+  flex: 0 0 auto;
+  transition: background .15s,transform .15s;
+}
+
+.habit-check svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.habit-toggle[aria-pressed="true"] .habit-check {
+  background: var(--accent-ink);
+}
+
+.habit-toggle[aria-pressed="true"] .habit-check svg {
+  opacity: 1;
+}
+
+.habit-toggle:active .habit-check {
+  transform: scale(.91);
+}
+
+.habit-toggle:hover .habit-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.habit-just-checked {
+  animation: check-pop .25s ease-out;
+}
+
+@keyframes check-pop {
+  50% {
+    transform: scale(1.11);
+  }
+}
+
+.habit-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .74rem;
+  color: var(--accent-ink);
+  white-space: nowrap;
+}
+
+.habit-streak svg {
+  width: 15px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.habit-remove {
+  width: 40px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: background .15s;
+}
+
+.habit-remove svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.habit-remove:hover {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.habit-record-body {
+  padding: 14px 22px;
+}
+
+.record-range {
+  margin: 0 0 8px;
+}
+
+.record-table {
+  width: 100%;
+  border: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: center;
+  color: var(--muted);
+}
+
+.record-table :is(th,td) {
+  padding: 0;
+  height: 23px;
+  text-align: center;
+  font-weight: 400;
+  border: 0;
+  vertical-align: middle;
+}
+
+.record-table th {
+  font-size: .7rem;
+}
+
+.record-table :is(th,td):first-child {
+  text-align: left;
+  width: 72px;
+}
+
+.record-table thead {
+  border-bottom: 1px solid var(--line);
+}
+
+.record-table thead th {
+  padding-bottom: 4px;
+  font-size: .66rem;
+}
+
+.record-table tbody tr:first-child :is(th,td) {
+  padding-top: 4px;
+}
+
+.record-dot {
+  display: inline-block;
+  vertical-align: middle;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-ink);
+  border-radius: 50%;
+  border: 1px solid transparent;
+}
+
+.record-dot.level-0 {
+  background: var(--paper);
+  border-color: var(--line);
+}
+
+.record-dot.level-1 {
+  background: color-mix(in srgb,var(--accent-ink) 32%,var(--surface));
+}
+
+.record-dot.level-2 {
+  background: color-mix(in srgb,var(--accent-ink) 64%,var(--surface));
+}
+
+.record-dot.is-today {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.record-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 10px;
+  font-size: .66rem;
+}
+
+.record-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.record-key .record-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.habit-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media(max-width:480px) {
+  .habit-section-heading,.habit-form,.habit-record-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .habit-empty {
+    gap: 10px;
+    padding: 14px;
+  }
+  .habit-sketch {
+    width: 68px;
+    height: 66px;
+  }
+  .habit-item {
+    padding-left: 14px;
+    padding-right: 6px;
+    gap: 4px;
+  }
+  .habit-toggle {
+    gap: 8px;
+  }
+  .record-table :is(th,td):first-child {
+    width: 53px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .habit-just-checked {
+    animation: none;
+  }
+  .habit-check,.habit-remove {
+    transition: none;
+  }
+}
+/* APP:CSS:END */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="kit-shell">
+  <header>
+    <div class="kit-top">
+      <svg class="kit-logo" viewBox="0 0 34 34" aria-hidden="true"><rect x=".5" y=".5" width="33" height="33" rx="7" fill="#44546e"/><g fill="none" stroke="#f4efe4" stroke-width="1.45" stroke-linejoin="round"><path d="M9 10H7v17h14v-2"/><path d="M11 6h9l6 6v11H11z M20 6v6h6"/><path d="M14 16h8m-8 3h5"/></g></svg>
+      <span class="kit-wordmark">OneFile Kit</span>
+    </div>
+    <div class="kit-heading">
+      <div class="kit-name"><h1 id="app-title"></h1><span class="kit-japanese" lang="ja" id="app-japanese"></span></div>
+      <p class="kit-description" id="app-description"></p>
+    </div>
+    <div class="kit-tabs" role="tablist" aria-label="App views">
+      <button class="kit-tab" id="workspace-tab" type="button" role="tab" aria-selected="true" aria-controls="workspace">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M3 7.5h14m-9 0v9"/></svg><span id="app-tab"></span>
+      </button>
+      <button class="kit-tab" id="settings-tab" type="button" role="tab" tabindex="-1" aria-selected="false" aria-controls="settings">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h6m4 0h6M2 14h9m4 0h3"/><circle cx="10" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg>Settings
+      </button>
+    </div>
+  </header>
+  <main class="kit-main">
+    <section class="kit-panel" role="tabpanel" aria-labelledby="workspace-tab" tabindex="0" id="workspace">
+      <!-- APP:BODY:START -->
+      <div class="habit-workspace">
+        <section aria-labelledby="today-heading" class="habit-sheet">
+          <div class="habit-section-heading">
+            <div class="habit-heading-group">
+              <svg class="habit-section-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="15" rx="2"/><path d="M9 3v5m6-5v5M5 11h14m-10 5 2 2 4-4"/></svg>
+              <h2 id="today-heading">Today</h2>
+            </div>
+            <time id="habit-today" class="habit-meta"></time>
+          </div>
+          <div id="habit-list-area"></div>
+          <form id="new-habit" class="habit-form">
+            <label for="habit-name">New habit</label>
+            <span id="habit-count" class="habit-meta" aria-label="Character count">0 / 40</span>
+            <div class="habit-entry">
+              <input id="habit-name" name="habit" type="text" required autocomplete="off" placeholder="e.g. Read a page" aria-describedby="habit-count">
+              <button class="button primary" type="submit"><span class="habit-plus" aria-hidden="true">+</span> Add habit</button>
+            </div>
+          </form>
+        </section>
+
+        <section aria-labelledby="record-heading" class="habit-sheet record-sheet">
+          <div class="habit-section-heading">
+            <div class="habit-heading-group">
+              <svg class="habit-section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6 16v-3m4 3V9m4 7v-5m4 5V5"/></svg>
+              <h2 id="record-heading">Seven-week record</h2>
+            </div>
+          </div>
+          <div class="habit-record-body">
+            <p class="record-range habit-meta" id="record-range"></p>
+            <table class="record-table" id="habit-record">
+              <caption class="habit-sr">Daily habit completions during the last seven weeks</caption>
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+            <div class="record-key">
+              <span>Checks per day</span>
+              <span><i class="record-dot level-0"></i> 0</span><span><i class="record-dot level-1"></i> 1</span><span><i class="record-dot level-2"></i> 2</span><span><i class="record-dot level-3"></i> 3+</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <!-- APP:BODY:END -->
+    </section>
+    <section class="kit-panel kit-settings" role="tabpanel" aria-labelledby="settings-tab" tabindex="0" id="settings" hidden>
+      <h2>Appearance</h2>
+      <fieldset class="kit-fieldset"><legend>Theme</legend>
+        <div class="kit-choices">
+          <label class="kit-choice"><input type="radio" name="theme" value="light">Light</label>
+          <label class="kit-choice"><input type="radio" name="theme" value="dark">Dark</label>
+        </div>
+      </fieldset>
+      <fieldset class="kit-fieldset"><legend>Accent color</legend>
+        <div class="kit-choices">
+          <label class="kit-choice"><input type="radio" name="accent" value="#44546e"><span class="kit-swatch" style="--swatch:#44546e"></span>Ink blue</label>
+          <label class="kit-choice"><input type="radio" name="accent" value="#3e7d4e"><span class="kit-swatch" style="--swatch:#3e7d4e"></span>Leaf green</label>
+          <label class="kit-choice"><input type="radio" name="accent" value="#b4552d"><span class="kit-swatch" style="--swatch:#b4552d"></span>Terracotta</label>
+          <label class="kit-custom">Custom <input id="custom-color" type="color" value="#44546e"></label>
+        </div>
+      </fieldset>
+      <div class="kit-settings-end"><button type="button" class="button" id="reset-settings">Reset appearance</button></div>
+    </section>
+  </main>
+  <footer class="kit-footer">
+    <span class="kit-file">
+      <svg viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-linejoin="round" aria-hidden="true"><path d="M2 1h6l4 4v10H2zM8 1v4h4M4 9h6m-6 3h4"/></svg>
+      <span id="file-name"></span><span class="kit-byte"><span id="file-size">38,372</span> bytes</span>
+    </span>
+  </footer>
+</div>
+<dialog class="kit-dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2><p id="confirm-message"></p>
+    <div class="kit-dialog-actions"><button type="submit" class="button" value="cancel" autofocus>Cancel</button><button type="submit" class="button primary" value="confirm" id="confirm-accept"></button></div>
+  </form>
+</dialog>
+<div class="kit-toast" id="kit-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<script>
+'use strict';
+// APP:CONFIG:START
+const APP = {
+  title: "Tiny Habits",
+  japanese: "小さな習慣",
+  description: "Check off today's habits and watch your daily streaks grow.",
+  tab: "Habits",
+  accent: "#3e7d4e",
+  key: "onefile.tiny-habits.v1",
+  initial: { habits: [] },
+  restore(data) {
+    const seen = new Set();
+    const habits = [];
+    for (const item of Array.isArray(data?.habits) ? data.habits : []) {
+      if (!item || typeof item.id !== "string" || !item.id || seen.has(item.id)) continue;
+      if (typeof item.name !== "string" || !item.name.trim()) continue;
+      seen.add(item.id);
+      const days = Array.isArray(item.days) ? item.days.filter(day => typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day)) : [];
+      habits.push({ id: item.id, name: item.name.trim(), days: [...new Set(days)] });
+    }
+    return { habits };
+  }
+};
+// APP:CONFIG:END
+const byId = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+const validColor = color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color);
+const defaults = () => ({settings: {theme: 'light', accent: APP.accent}, data: clone(APP.initial)});
+
+function restoreState(serialized) {
+  const fresh = defaults();
+  if (!serialized) return fresh;
+  try {
+    const saved = JSON.parse(serialized);
+    const preferences = saved?.settings;
+    if (preferences?.theme === 'dark') fresh.settings.theme = 'dark';
+    if (validColor(preferences?.accent)) fresh.settings.accent = preferences.accent.toLowerCase();
+    if (saved?.data && typeof saved.data === 'object' && !Array.isArray(saved.data)) {
+      fresh.data = APP.restore ? APP.restore(saved.data) : {...fresh.data, ...saved.data};
+    }
+  } catch { /* An unreadable save reopens with this app's defaults. */ }
+  return fresh;
+}
+
+let toastTimer;
+function toast(message) {
+  const node = byId('kit-toast');
+  clearTimeout(toastTimer);
+  node.textContent = message;
+  node.classList.add('visible');
+  toastTimer = setTimeout(() => { node.classList.remove('visible'); node.textContent = ''; }, 2600);
+}
+
+function createStore() {
+  let lastSave = null;
+  try { lastSave = localStorage.getItem(APP.key); } catch { /* Storage can be unavailable for a local file. */ }
+  let state = restoreState(lastSave);
+  const listeners = new Set();
+  const notify = () => { for (const listener of listeners) listener(state); };
+  window.addEventListener('storage', event => {
+    if (event.key !== APP.key && event.key !== null) return;
+    // An older event can arrive after this tab has already read or written a newer save.
+    let latest;
+    try {
+      if (event.storageArea && event.storageArea !== localStorage) return;
+      latest = localStorage.getItem(APP.key);
+    } catch { return; }
+    if (latest === lastSave) return;
+    lastSave = latest;
+    state = restoreState(latest);
+    notify();
+  });
+  return {
+    get: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      listener(state);
+      return () => listeners.delete(listener);
+    },
+    update(change) {
+      // Start from the newest save if another window wrote before its storage event arrived.
+      try {
+        const latest = localStorage.getItem(APP.key);
+        if (latest !== lastSave) { state = restoreState(latest); lastSave = latest; }
+      } catch { /* The current session still works in memory. */ }
+      const next = clone(state);
+      change(next);
+      state = next;
+      try {
+        const serialized = JSON.stringify(state);
+        localStorage.setItem(APP.key, serialized);
+        lastSave = serialized;
+      } catch { queueMicrotask(() => toast('Changes are available for this session only.')); }
+      notify();
+    }
+  };
+}
+
+function emptyState({title, message}) {
+  const box = document.createElement('div');
+  box.className = 'empty-state';
+  const heading = document.createElement('h2');
+  const body = document.createElement('p');
+  heading.textContent = title;
+  body.textContent = message;
+  box.append(heading, body);
+  return box;
+}
+
+function confirmAction({title, message, confirmLabel = 'Confirm'}) {
+  const dialog = byId('confirm-dialog');
+  if (dialog.open) return Promise.resolve(false);
+  byId('confirm-title').textContent = title;
+  byId('confirm-message').textContent = message;
+  byId('confirm-accept').textContent = confirmLabel;
+  dialog.returnValue = 'cancel';
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'confirm'), {once: true});
+    dialog.showModal();
+  });
+}
+
+function selectTab(panel, focus = false) {
+  for (const tab of tabs) {
+    const selected = tab.getAttribute('aria-controls') === panel;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    byId(tab.getAttribute('aria-controls')).hidden = !selected;
+    if (selected && focus) tab.focus();
+  }
+}
+const tabs = [...document.querySelectorAll('.kit-tab')];
+tabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => selectTab(tab.getAttribute('aria-controls')));
+  tab.addEventListener('keydown', event => {
+    const next = {ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1}[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    selectTab(tabs[next].getAttribute('aria-controls'), true);
+  });
+});
+
+// Pick readable foregrounds even when a user selects a very pale or dark accent.
+function luminance(hex) {
+  const channels = hex.slice(1).match(/../g).map(part => {
+    const s = parseInt(part, 16) / 255;
+    return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4;
+  });
+  return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+}
+function contrast(a, b) {
+  return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+}
+const store = createStore();
+byId('app-title').textContent = APP.title;
+byId('app-japanese').textContent = APP.japanese;
+byId('app-description').textContent = APP.description;
+byId('app-tab').textContent = APP.tab;
+document.title = APP.title + ' · OneFile Kit';
+const filename = location.pathname.split('/').pop();
+try { byId('file-name').textContent = decodeURIComponent(filename || 'index.html'); }
+catch { byId('file-name').textContent = filename; }
+// A distributed file may carry a measured byte count. Use 00,000 for a new estimate after editing.
+if (byId('file-size').textContent === '00,000') {
+  const size = new Blob(['<!doctype html>\n', document.documentElement.outerHTML]).size;
+  byId('file-size').textContent = size.toLocaleString('en-US');
+}
+
+let appliedAppearance;
+store.subscribe(({settings}) => {
+  const appearance = settings.theme + settings.accent;
+  if (appliedAppearance === appearance) return;
+  appliedAppearance = appearance;
+  const root = document.documentElement;
+  root.dataset.theme = settings.theme;
+  const dark = settings.theme === 'dark';
+  const lightness = luminance(settings.accent);
+  root.style.setProperty('--accent', settings.accent);
+  root.style.setProperty('--on-accent', contrast(lightness, 1) >= contrast(lightness, 0) ? '#fff' : '#000');
+  const tone = dark ? '#f4efe4' : '#2e2a24';
+  // Gradually tint dark accents on dark paper (and shade pale accents on light paper).
+  const channel = (color, i) => parseInt(color.slice(i, i + 2), 16);
+  const background = luminance(dark ? '#2c2922' : '#f4efe4');
+  let ink = settings.accent;
+  for (let step = 1; contrast(luminance(ink), background) < 4.8 && step <= 10; step++) {
+    ink = '#' + [1, 3, 5].map(i => Math.round(channel(settings.accent, i) * (1 - step / 10) + channel(tone, i) * step / 10).toString(16).padStart(2, '0')).join('');
+  }
+  root.style.setProperty('--accent-ink', ink);
+  document.querySelectorAll('input[name="theme"]').forEach(input => { input.checked = input.value === settings.theme; });
+  document.querySelectorAll('input[name="accent"]').forEach(input => { input.checked = input.value === settings.accent; });
+  byId('custom-color').value = settings.accent;
+});
+byId('settings').addEventListener('change', event => {
+  const input = event.target;
+  if (input.name === 'theme') store.update(s => { s.settings.theme = input.value; });
+  if (input.name === 'accent' || input.id === 'custom-color') store.update(s => { s.settings.accent = input.value; });
+});
+byId('reset-settings').addEventListener('click', async () => {
+  if (await confirmAction({title: 'Reset appearance?', message: 'Restore the light theme and the original accent color.', confirmLabel: 'Reset'})) {
+    store.update(s => { s.settings = defaults().settings; });
+    toast('Appearance restored.');
+  }
+});
+
+// APP:SCRIPT:START
+const dateLong = new Intl.DateTimeFormat("en", {weekday: "long", year: "numeric", month: "long", day: "numeric"});
+const dateShort = new Intl.DateTimeFormat("en", {month: "short", day: "numeric"});
+const dateFull = new Intl.DateTimeFormat("en", {month: "short", day: "numeric", year: "numeric"});
+const weekday = new Intl.DateTimeFormat("en", {weekday: "short"});
+const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, {granularity:"grapheme"}) : null;
+
+function dayKey(date) {
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
+
+function offsetDate(date, days) {
+  // Calendar arithmetic at local noon also works across daylight-saving transitions.
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, 12);
+}
+
+function currentStreak(days, today) {
+  const recorded = new Set(days);
+  let cursor = today;
+  if (!recorded.has(dayKey(cursor))) cursor = offsetDate(cursor, -1);
+  let length = 0;
+  while (recorded.has(dayKey(cursor))) {
+    length++;
+    cursor = offsetDate(cursor, -1);
+  }
+  return length;
+}
+
+function makeElement(tag, className, value) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (value !== undefined) el.textContent = value;
+  return el;
+}
+
+const checkIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5.5 12 4.5 4.5 8.5-9"/></svg>';
+const streakIcon = '<svg viewBox="0 0 20 24" aria-hidden="true"><path d="M10.7 2c.4 4.7-5.2 6.1-4.2 10.6-1.4-.5-1.9-1.7-2.2-2.8C.9 15.2 4.2 21 9.7 21c5.3 0 8.1-4.4 6.5-9.2-.1 1.2-.7 1.9-1.4 2.3.9-5.2-1.4-8.4-4.1-12.1Z"/></svg>';
+const removeIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M9 6V3.8h6V6M6.5 7.5l.9 12.1a1.4 1.4 0 0 0 1.4 1.2h6.4a1.4 1.4 0 0 0 1.4-1.2l.9-12.1M10 10v7m4-7v7"/></svg>';
+const emptyIllustration = '<svg class="habit-sketch" viewBox="0 0 100 86" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path fill="var(--accent-wash)" d="m23 18 42-6 7 56-42 6z"/><path fill="var(--surface)" d="m28 13 40 2 5 6-3 49-45-3z"/><path d="m68 15-.3 6.1L73 21M35 26l17 1m-7 11 16 1m-17 10 15 1m-15 10 10 1"/><circle cx="37" cy="38" r="3.4"/><circle cx="36.5" cy="49" r="3.4"/><circle cx="36" cy="60" r="3.4"/><path d="m35.5 37.9 1.3 1.3 3.8-4.5m-5.7 14 1.2 1.3 4.3-4.8"/><path fill="var(--paper)" d="m59 51 17-29 4 2-17 30-5 4z"/><path d="m58 58 1-5 4 2M73 27l4 2m-50 49 24 1m4 0 4 .2"/></g></svg>';
+
+const habitArea = byId("habit-list-area");
+const nameInput = byId("habit-name");
+const historyTable = byId("habit-record");
+let shownDay = "";
+
+function habitRow(habit, today) {
+  const checked = habit.days.includes(dayKey(today));
+  const streak = currentStreak(habit.days, today);
+  const row = makeElement("li", "habit-item");
+  row.dataset.id = habit.id;
+
+  const toggle = makeElement("button", "habit-toggle");
+  toggle.type = "button";
+  toggle.dataset.action = "toggle";
+  toggle.setAttribute("aria-pressed", String(checked));
+  toggle.setAttribute("aria-label", "Check off " + habit.name + " for today");
+  const circle = makeElement("span", "habit-check");
+  circle.innerHTML = checkIcon;
+  toggle.append(circle, makeElement("span", "habit-name", habit.name));
+
+  const counter = makeElement("span", "habit-streak");
+  counter.innerHTML = streakIcon;
+  counter.title = streak + "-day streak";
+  counter.append(makeElement("span", "", streak + (streak === 1 ? " day" : " days")), makeElement("span", "habit-sr", " in a row"));
+
+  const remove = makeElement("button", "habit-remove");
+  remove.type = "button";
+  remove.dataset.action = "remove";
+  remove.title = "Delete " + habit.name;
+  remove.setAttribute("aria-label", remove.title);
+  remove.innerHTML = removeIcon;
+  row.append(toggle, counter, remove);
+  return row;
+}
+
+function renderHabits(habits, today) {
+  const active = document.activeElement;
+  const focusedRow = habitArea.contains(active) ? active.closest("[data-id]") : null;
+  const focusAction = active?.dataset.action;
+  if (!habits.length) {
+    const empty = makeElement("div", "habit-empty");
+    empty.innerHTML = emptyIllustration;
+    empty.append(emptyState({title: "No habits yet", message: "Add a habit below to start your first streak."}));
+    habitArea.replaceChildren(empty);
+  } else {
+    const list = makeElement("ul", "habit-list");
+    for (const habit of habits) list.append(habitRow(habit, today));
+    habitArea.replaceChildren(list);
+    if (focusedRow) {
+      const replacement = Array.from(list.children).find(row => row.dataset.id === focusedRow.dataset.id);
+      replacement?.querySelector('[data-action="' + focusAction + '"]')?.focus({preventScroll:true});
+    }
+  }
+}
+
+function renderRecord(habits, today) {
+  const counts = new Map();
+  const start = offsetDate(today, -48);
+  const firstDay = dayKey(start);
+  const lastDay = dayKey(today);
+  for (const habit of habits) {
+    for (const date of habit.days) {
+      if (date >= firstDay && date <= lastDay) counts.set(date, (counts.get(date) || 0) + 1);
+    }
+  }
+  const startFormat = start.getFullYear() === today.getFullYear() ? dateShort : dateFull;
+  byId("record-range").textContent = startFormat.format(start) + " – " + dateFull.format(today);
+
+  const heading = document.createElement("tr");
+  const week = makeElement("th", "", "Week of");
+  week.scope = "col";
+  heading.append(week);
+  for (let column = 0; column < 7; column++) {
+    const th = makeElement("th", "", weekday.format(offsetDate(start, column)));
+    th.scope = "col";
+    heading.append(th);
+  }
+  historyTable.tHead.replaceChildren(heading);
+
+  const body = document.createDocumentFragment();
+  for (let weekIndex = 0; weekIndex < 7; weekIndex++) {
+    const row = document.createElement("tr");
+    const rowLabel = makeElement("th", "", dateShort.format(offsetDate(start, weekIndex * 7)));
+    rowLabel.scope = "row";
+    row.append(rowLabel);
+    for (let column = 0; column < 7; column++) {
+      const date = offsetDate(start, weekIndex * 7 + column);
+      const key = dayKey(date);
+      const count = counts.get(key) || 0;
+      const cell = document.createElement("td");
+      const label = dateLong.format(date) + ", " + count + (count === 1 ? " check-in" : " check-ins");
+      cell.title = label;
+      const dot = makeElement("span", "record-dot level-" + Math.min(count, 3));
+      dot.setAttribute("aria-hidden", "true");
+      if (key === lastDay) {
+        dot.classList.add("is-today");
+        cell.setAttribute("aria-current", "date");
+      }
+      cell.append(dot, makeElement("span", "habit-sr", label));
+      row.append(cell);
+    }
+    body.append(row);
+  }
+  historyTable.tBodies[0].replaceChildren(body);
+}
+
+function renderDiary(state) {
+  const today = new Date();
+  shownDay = dayKey(today);
+  const date = byId("habit-today");
+  date.dateTime = shownDay;
+  date.textContent = weekday.format(today) + ", " + dateShort.format(today);
+  renderHabits(state.data.habits, today);
+  renderRecord(state.data.habits, today);
+}
+
+function validateName() {
+  const trimmed = nameInput.value.trim();
+  const size = segmenter ? Array.from(segmenter.segment(trimmed)).length : Array.from(trimmed).length;
+  byId("habit-count").textContent = size + " / 40";
+  const error = size > 40 ? "Use 40 characters or fewer." : nameInput.value && !trimmed ? "Enter a habit name." : "";
+  nameInput.setCustomValidity(error);
+  return trimmed;
+}
+
+nameInput.addEventListener("input", validateName);
+byId("new-habit").addEventListener("submit", event => {
+  event.preventDefault();
+  const name = validateName();
+  if (!nameInput.reportValidity() || !name) return;
+  const id = globalThis.crypto?.randomUUID?.() ?? (Date.now().toString(36) + Math.random().toString(36).slice(2));
+  store.update(state => { state.data.habits.push({id, name, days:[]}); });
+  nameInput.value = "";
+  validateName();
+  nameInput.focus();
+  toast("Habit added.");
+});
+
+habitArea.addEventListener("click", async event => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const id = button.closest("[data-id]").dataset.id;
+  const habit = store.get().data.habits.find(entry => entry.id === id);
+  if (!habit) return;
+
+  if (button.dataset.action === "remove") {
+    const remove = await confirmAction({
+      title: "Delete habit?",
+      message: "This will delete “" + habit.name + "” and its check-in history.",
+      confirmLabel: "Delete habit"
+    });
+    if (remove) {
+      store.update(state => { state.data.habits = state.data.habits.filter(entry => entry.id !== id); });
+      nameInput.focus();
+      toast("Habit deleted.");
+    }
+    return;
+  }
+
+  const today = dayKey(new Date());
+  const alreadyChecked = habit.days.includes(today);
+  store.update(state => {
+    const entry = state.data.habits.find(item => item.id === id);
+    // The latest save can include a deletion or check-in from another open tab.
+    if (!entry) return;
+    if (alreadyChecked) entry.days = entry.days.filter(date => date !== today);
+    else if (!entry.days.includes(today)) entry.days.push(today);
+  });
+  if (!alreadyChecked) {
+    const row = Array.from(habitArea.querySelectorAll("[data-id]")).find(item => item.dataset.id === id);
+    row?.querySelector(".habit-check")?.classList.add("habit-just-checked");
+  }
+  toast(alreadyChecked ? "Check-in undone." : "Checked in for today.");
+});
+
+store.subscribe(renderDiary);
+function refreshDate() {
+  if (dayKey(new Date()) !== shownDay) renderDiary(store.get());
+}
+function scheduleMidnight() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  setTimeout(() => { refreshDate(); scheduleMidnight(); }, next.getTime() - now.getTime() + 100);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDate(); });
+window.addEventListener("focus", refreshDate);
+scheduleMidnight();
+// APP:SCRIPT:END
+</script>
+</body>
+</html>
